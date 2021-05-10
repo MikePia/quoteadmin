@@ -135,3 +135,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+AWS_ACCESS_KEY_ID = os.environment.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environment.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environment.get('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.environment.get('AWS_S3_REGION_NAME')
+AWS_S3_FILE_OVERWRITE = os.environment.get('AWS_S3_FILE_OVERWRITE')
+AWS_DEFAULT_ACL = os.environment.get('AWS_DEFAULT_ACL')
+# ???
+DEFAULT_FILE_STORAGE = os.environment.get('DEFAULT_FILE_STORAGE')
