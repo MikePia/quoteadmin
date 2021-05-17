@@ -17,3 +17,10 @@ data to enter -
 directory=/home/ubuntu/resume/djangoResume
 command = {path}/venv/bin/gunicorn -workers 3 -bind
 unix:/home/ubuntyu/resume/app.sock djangoResume.wsgi:applictation
+
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/gunicorn/gunicorn.err.log
+
+ssh -i C:\python\E\uw\quotebiz\packaging\aws\AWS_quotedb.pem ubuntu@ec2-18-218-121-178.us-east-2.compute.amazonaws.com	
+ssh -i "AWS_quotedb.pem" ubuntu@ec2-3-134-77-223.us-east-2.compute.amazonaws.com
