@@ -19,6 +19,9 @@
         h1 {
             padding-bottom: 20px;
         }
+        .toast {
+            color: blue;
+        }
     </style>
 </head>
 <body>
@@ -46,6 +49,12 @@
           </div>
         </div>
       </nav>
+      {% if messages  %}
+          {% for message in messages %}
+              {{ message }}
+          {% endfor %}
+      {% endif %}
+
 
       <h1>Quote admin business process 1</h1>
       <div class="container">
@@ -64,9 +73,16 @@
                             <ul class="list-group">
                                 {{ form.as_ul}}
                             </ul>
-                            <button type="submit">Submit</button>
+                            {% if form.finncandles %}
+                                <button type="submit">Stop Candles</button>
+                                
+                                {% else %}
+                                <button type="submit">Submit</button>
+                                
+                            {% endif %}
                         </form>
                     </div>
+                        
                 </div>
                 
             </div>
@@ -127,6 +143,9 @@
             </div>
 
         </div>  
+        <div>
+            <hr>
+        </div>
     </div>
 </body>
 </html>
