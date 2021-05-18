@@ -1,12 +1,10 @@
 import datetime as dt
 import os
-
 from threading import Thread
 
 from quotedb import sp500
-
 from quotedb.finnhub.finncandles import FinnCandles
-from quotedb.getdata import startTickWSKeepAlive
+from quotedb.getdata import (getJustGainersLosers, startTickWSKeepAlive)
 from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
 from quotedb.models.managecandles import ManageCandles
@@ -32,8 +30,6 @@ class BusinessOps:
             stocks = sp500.nasdaq100symbols
         elif stocks == 's&p_q100':
             stocks = sp500.getSymbols()
-        else:
-            return -1
         return stocks
 
     # def startCandles(self, start, model=CandlesModel, latest=False, numcycles=9999999999):
@@ -43,26 +39,32 @@ class BusinessOps:
         self.fc.keepGoing = True
         if isinstance(kwargs['start'], dt.datetime):
             kwargs['start'] = util.dt2unix_ny(kwargs['start'])
-        # self.fc.cycleStockCandles(start, model, latest, numcycles)
-        t = Thread(target=self.fc.cycleStockCandles, args=args, kwargs=kwargs)
+        t = Thread(target=self.fc.cycleStockCandles, kwargs=kwargs)
         t.start()
         self.isrunning = True
-        # fc.cycleStockCandles(start, model=AllquotesModel, latest=latest, numcycles=numrepeats)
 
     def stop(self):
         self.fc.keepGoing = False
 
-    def getGainersLosers(self):
+    def getGainersLosers(self, start, stocks, model, numrec=50):
+        end = util.dt2unix(dt.datetime.utcnow())
 
-        mc = ManageCandles(None, CandlesModel)
+        glstocks = getJustGainersLosers(start, end, stocks, numrec, model, local=False)
+        self.stocks = glstocks
+        self.fc.tickers = glstocks
+        return glstocks
+
+    def startWebSocket(self, model, start, numstocks):
+
+        if isinstance(start, dt.datetime):
+            start = util.dt2unix_ny(start)
+        mc = ManageCandles(None, model)
         stocks = mc.getTickers()
-        start = util.dt2unix_ny(dt.datetime(2021, 4, 26, 3, 30))
-        numstocks = 12
         gainers, losers = mc.filterGainersLosers(stocks, start, numstocks)
         gainers.extend(losers[1:])
         gainers = [x[0] for x in gainers][1:]
         # This bogus addition of bitcoin allows it to run after hours and get something from the websocket server most any time 24/7
-        gainers.append('BINANCE:BTCUSDT')
+        # gainers.append('BINANCE:BTCUSDT')
         print(len(gainers))
 
         fn = util.formatFn("mockbiz.json", 'json')
@@ -72,8 +74,15 @@ class BusinessOps:
 
 
 if __name__ == '__main__':
-    bop = BusinessOps()
-    stocks = "s&p500"
-    start = dt.datetime(2021, 5, 14, 9, 30)
+    stocks = []
+    start = util.dt2unix_ny(dt.datetime(2021, 5, 17, 9, 30))
+    end = util.dt2unix(dt.datetime.utcnow())
     model = AllquotesModel
-    bop.startCandles(stocks, start, model=model, latest=True, numcycles=0)
+    numrec = 50
+    local = False
+    bop = BusinessOps(stocks)
+    stocks = bop.getGainersLosers(start=start, stocks=stocks, model=model)
+    # Need the stocks first then reinitialize bop.fc with it
+    bop.fc = FinnCandles(stocks)
+    model = CandlesModel
+    bop.startCandles(start=start, model=model, latest=True, numcycles=10)

@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.startAllQuotes, name="startAllQuotes"),
-    path('', views.startCandleCandles, name="startCandleCandles"),
+    path('allquotes', views.startAllQuotes, name="startAllQuotes"),
+    path('candles', views.startCandleCandles, name="startCandleCandles"),
     path('', views.startWebsocket, name="startWebsocket"),
 ]

@@ -13,14 +13,15 @@ class StartCandlesAllQuotes(forms.Form):
                                         ("s&p_q100", "S&P_Q100"),
                                         ("custom", "Custom")], required=False)
     latest = forms.BooleanField(help_text="Begin with the most recent entry if checked", required=False)
-    finncandles = None
+    finncandles_allquotes = None
+    finncandles_candles = None
 
 
 class StartCandleCandles(forms.Form):
     # stocks, fn, store, delt=None, polltime=5)
     start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
     num_gainerslosers = forms. IntegerField(max_value=35, min_value=5)
-    firstquote_date = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
+    # firstquote_date = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
 
 
 class StartWebsocket(forms.Form):

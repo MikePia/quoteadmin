@@ -68,18 +68,23 @@
                     <h3 class="card-title">Start Candles -- allquotes </h3>
                     <div class="card-body">
                         
-                        <form method="post">
+                        <form action="allquotes" method="post">
                             {% csrf_token %}
                             <ul class="list-group">
-                                {{ form.as_ul}}
+                                {{ form_quotes.as_ul}}
+                                <li>
+                                    <button class="btn btn-primary" type="submit">Submit</button>
+                                </li>
                             </ul>
-                            {% if form.finncandles %}
-                                <button type="submit">Stop Candles</button>
-                                
-                                {% else %}
-                                <button type="submit">Submit</button>
-                                
+                            
+                        </form>
+                        <form action="allquotes" method="post">
+                            {% csrf_token %}
+                            {% if thebop %}
+
+                                <button class="btn btn-primary" type="submit">Stop Candles</button>
                             {% endif %}
+
                         </form>
                     </div>
                         
@@ -94,12 +99,19 @@
                     <h3 class="card-title">Start Candles with the greatest gainers/losers </h3>
                     <div class="card-body">
                         
-                        <form method="post">
+                        <form action="candles" method="post">
                             {% csrf_token %}
                             <ul>
                                 {{ form_candles.as_ul}}
+                                <li> <button class="btn btn-primary" type="submit">Submit</button> </li>
                             </ul>
-                            <button type="submit">Submit</button>
+                        </form>
+                        <form action="candles" method="post">
+                            {% csrf_token %}
+                            {% if thebebop %}
+                            <ul><li> <button class="btn btn-primary" type="submit">Stop Candles</button> </li></ul>
+                            {% endif %}
+                            
                         </form>
                     </div>
                 </div>
@@ -115,7 +127,7 @@
                         <form method="post">
                             {% csrf_token %}
                             <ul>
-                                {{ form.as_ul}}
+                                {{ form_quotes.as_ul}}
                             </ul>
                             <button type="submit">Submit</button>
                         </form>
@@ -133,7 +145,7 @@
                         <form method="post">
                             {% csrf_token %}
                             <ul>
-                                {{ form.as_ul}}
+                                {{ form_quotes.as_ul}}
                             </ul>
                             <button type="submit">Submit</button>
                         </form>
