@@ -1,18 +1,23 @@
 import datetime as dt
 import os
 from threading import Thread
+import time
 
 from quotedb import sp500
 from quotedb.finnhub.finncandles import FinnCandles
-from quotedb.getdata import (getJustGainersLosers, startTickWSKeepAlive)
-from quotedb.models.allquotes_candlemodel import AllquotesModel
+from quotedb.getdata import (getJustGainersLosers, startTickWS)
+# from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
-from quotedb.models.managecandles import ManageCandles
+
 from quotedb.utils import util
 
 
 class BusinessOps:
     startcandle_pid = -1
+    candlestocks = None
+    websocketstocks = None
+    threadkeepgoing = True
+    socketisrunning = False
 
     def __init__(self, stocks):
         self.stocks = self.getStocks(stocks)
@@ -29,7 +34,7 @@ class BusinessOps:
         elif stocks == 'nasdaq100':
             stocks = sp500.nasdaq100symbols
         elif stocks == 's&p_q100':
-            stocks = sp500.getSymbols()
+            stocks = sp500.getQ100_Sp500()
         return stocks
 
     # def startCandles(self, start, model=CandlesModel, latest=False, numcycles=9999999999):
@@ -50,39 +55,77 @@ class BusinessOps:
         end = util.dt2unix(dt.datetime.utcnow())
 
         glstocks = getJustGainersLosers(start, end, stocks, numrec, model, local=False)
-        self.stocks = glstocks
+
+        self.candlestocks = glstocks
         self.fc.tickers = glstocks
         return glstocks
 
-    def startWebSocket(self, model, start, numstocks):
-
+    def startWebSocket(self, start, srate, numstocks, fn):
+        self.threadkeepgoing = True
+        self.socketisrunning = False
+        if not self.candlestocks:
+            return None
         if isinstance(start, dt.datetime):
             start = util.dt2unix_ny(start)
-        mc = ManageCandles(None, model)
-        stocks = mc.getTickers()
-        gainers, losers = mc.filterGainersLosers(stocks, start, numstocks)
-        gainers.extend(losers[1:])
-        gainers = [x[0] for x in gainers][1:]
-        # This bogus addition of bitcoin allows it to run after hours and get something from the websocket server most any time 24/7
-        # gainers.append('BINANCE:BTCUSDT')
-        print(len(gainers))
+        end = util.dt2unix(dt.datetime.utcnow())
+        self.websocketstocks = getJustGainersLosers(start, end, self.websocketstocks, numstocks, model=CandlesModel)
 
-        fn = util.formatFn("mockbiz.json", 'json')
+        fn = util.formatFn(fn, 'json')
 
         fn = os.path.normpath(fn)
-        startTickWSKeepAlive(gainers, fn, ['json'], delt=None, polltime=5)
+        # self.websocketstocks.append('BINANCE:BTCUSDT')
+        t = Thread(target=self.startTickWSKeepAlive,
+                   kwargs={'stocks': self.websocketstocks,
+                           'fn': fn,
+                           'store': ['json'],
+                           'delt': None,
+                           'polltime': 5})
+        t.start()
+        self.socketisrunning = True
+        print('thread starteed')
+
+    def stopSocket(self):
+        self.socketisrunning = False
+        self.threadkeepgoing = False
+
+    def startTickWSKeepAlive(self, stocks=[], fn="websocketdata", store=['json'], delt=None, polltime=5):
+
+        ws_thread = startTickWS(stocks, fn=fn, store=store)
+
+        while self.threadkeepgoing:
+            cur = time.time()
+            nexttime = cur + 5
+
+            while time.time() < nexttime and self.threadkeepgoing:
+                if not ws_thread.is_alive() and ws_thread.keepgoing:
+                    print('Websocket was stopped: restarting...')
+
+                    ws_thread = startTickWS(stocks, store=[format], fn=fn)
+                print(' ** ')
+                time.sleep(polltime)
+
+        # This is where a new gainers could be found new subscription could be called
 
 
 if __name__ == '__main__':
-    stocks = []
+    from dotenv import load_dotenv
+    load_dotenv()
+    # stocks = []
+    # end = util.dt2unix(dt.datetime.utcnow())
+    # model = AllquotesModel
+    # numrec = 50
+    # local = False
+    # bop = BusinessOps(stocks)
+    # # Need the stocks first then reinitialize bop.fc with it
+    # bop.fc = FinnCandles(stocks)
+    # model = CandlesModel
+    # bop.startCandles(start=start, model=model, latest=True, numcycles=10)
+    ###########################################################################
+    bop = BusinessOps([])
     start = util.dt2unix_ny(dt.datetime(2021, 5, 17, 9, 30))
-    end = util.dt2unix(dt.datetime.utcnow())
-    model = AllquotesModel
-    numrec = 50
-    local = False
-    bop = BusinessOps(stocks)
-    stocks = bop.getGainersLosers(start=start, stocks=stocks, model=model)
-    # Need the stocks first then reinitialize bop.fc with it
-    bop.fc = FinnCandles(stocks)
-    model = CandlesModel
-    bop.startCandles(start=start, model=model, latest=True, numcycles=10)
+    stocks = bop.getGainersLosers(start=start, stocks=[], model=CandlesModel)
+    bop.candlestocks = stocks
+    bop.startWebSocket(CandlesModel, start, None, 10, 'fredthefile')
+    print('sleeping')
+    time.sleep(60)
+    bop.threadkeepgoing = False

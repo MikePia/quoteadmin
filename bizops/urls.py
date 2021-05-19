@@ -6,5 +6,5 @@ urlpatterns = [
     path('', views.startAllQuotes, name="startAllQuotes"),
     path('allquotes', views.startAllQuotes, name="startAllQuotes"),
     path('candles', views.startCandleCandles, name="startCandleCandles"),
-    path('', views.startWebsocket, name="startWebsocket"),
+    path('websockets', views.startWebsocket, name="startWebsocket"),
 ]

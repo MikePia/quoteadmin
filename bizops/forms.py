@@ -19,13 +19,18 @@ class StartCandlesAllQuotes(forms.Form):
 
 class StartCandleCandles(forms.Form):
     # stocks, fn, store, delt=None, polltime=5)
-    start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
+    start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}), input_formats=['%Y-%m-%d %H:%M'])
     num_gainerslosers = forms. IntegerField(max_value=35, min_value=5)
     # firstquote_date = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
 
 
 class StartWebsocket(forms.Form):
     # stocks, fn, store, delt=None, polltime=5)
+    start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}), input_formats=['%Y-%m-%d %H:%M'])
     filename = forms.CharField()
-    sampleRate = forms.DecimalField(max_value=3600, min_value=0.2, decimal_places=3)
-    numStocks = forms.IntegerField(max_value=25, min_value=2)
+    # sampleRate = forms.DecimalField(max_value=3600, min_value=0.2, decimal_places=3)
+    numstocks = forms.IntegerField(max_value=25, min_value=2)
+
+
+class ProcessVisualizeData(forms.Form):
+    pass

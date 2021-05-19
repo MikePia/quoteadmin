@@ -14,6 +14,7 @@ from .forms import StartWebsocket
 
 thebop = None       # for startAllQuotes
 thebebop = None     # for startCandleCandles
+thebebopsocket = None    # For web socket, copied from thebebop
 
 
 def startAllQuotes(request):
@@ -54,24 +55,28 @@ def startAllQuotes(request):
         # Uninit for for GET
         form = StartCandlesAllQuotes()
     form_candles = StartCandleCandles()
+    form_websocket = StartWebsocket()
 
     return render(request, 'form.html', {'form_quotes': form,
                                          'form_candles': form_candles,
+                                         'form_websocket': form_websocket,
                                          'thebop': thebop,
-                                         'thebebop': thebebop})
+                                         'thebebop': thebebop,
+                                         'thebebopsocket': thebebopsocket})
 
 
 def startCandleCandles(request):
     global thebebop
+    global thebebopsocket
     if request.method == "POST":
         if thebebop and thebebop.isrunning:
             thebebop.fc.keepGoing = False
             messages.success(request, "Stopping candle gathering for the candles table")
             thebebop.isrunning = False
+            thebebopsocket = thebebop
             thebebop = None
         form_candles = StartCandleCandles(request.POST)
 
-        form_candles.is_valid()
         if form_candles.is_valid():
             start = form_candles.cleaned_data['start']
             start = start.replace(tzinfo=None)
@@ -94,21 +99,46 @@ def startCandleCandles(request):
                                          'form_candles': form_candles,
                                          'form_websocket': form_websocket,
                                          'thebop': thebop,
-                                         'thebebop': thebebop})
+                                         'thebebop': thebebop,
+                                         'thebebopsocket': thebebopsocket})
 
 
 def startWebsocket(request):
+    global thebebopsocket
     if request.method == "POST":
-        form_websocket = StartWebsocket(request.POST)
-        if form_websocket.is_valid():
-            filename = form_websocket.cleaned_data['filename']
-            sampleRate = form_websocket.cleaned_data['sampleRate']
-            numStocks = form_websocket.cleaned_data['sampleRate']
+        if thebebopsocket and thebebopsocket.socketisrunning:
+            thebebopsocket.stopSocket()
+            messages.success(request, "Stopping webs socket")
+            thebebopsocket = None
 
-    form = StartCandlesAllQuotes()
+        form_websocket = StartWebsocket(request.POST)
+
+        if form_websocket.is_valid():
+            start = form_websocket.cleaned_data['start']
+            start = start.replace(tzinfo=None)
+            start = util.dt2unix_ny(pd.Timestamp(start))
+            fn = form_websocket.cleaned_data['filename']
+            # sampleRate = form_websocket.cleaned_data['sampleRate']
+            numstocks = form_websocket.cleaned_data['numstocks']
+
+            bop = thebebopsocket
+            if bop:
+                bop.startWebSocket(start, None, numstocks, fn)
+                messages.success(request, 'Web socket started')
+                
+            else:
+                messages.error(request, "Missing the stocks. Please run startCandles")
+    else:
+        form_websocket = StartWebsocket()
+
+    form_quotes = StartCandlesAllQuotes()
     form_candles = StartCandleCandles()
-    form_websocket = StartWebsocket()
-    return render(request, 'form.html', {'form': form,
-                                         'form_candles': form_candles})
+    return render(request, 'form.html', {'form_quotes': form_quotes,
+                                         'form_candles': form_candles,
+                                         'form_websocket': form_websocket,
+                                         'thebop': thebop,
+                                         'thebebop': thebebop,
+                                         'thebebopsocket': thebebopsocket
+                                         })
 
     pass

@@ -124,12 +124,19 @@
                     <h3 class="card-title">Start the web socket server </h3>
                     <div class="card-body">
                         
-                        <form method="post">
+                        <form action="websockets" method="post">
                             {% csrf_token %}
                             <ul>
-                                {{ form_quotes.as_ul}}
+                                {{ form_websocket.as_ul}}
+                                <li><button  class="btn btn-primary" type="submit">Submit</button></li>
                             </ul>
-                            <button type="submit">Submit</button>
+                        </form>
+                        <form action="websockets" method="post">
+                            {% csrf_token %}
+                            {% if thebebopsocket %}
+                            <ul><li> <button class="btn btn-primary" type="submit">Stop Candles</button> </li></ul>
+                            {% endif %}
+
                         </form>
                     </div>
                 </div>
