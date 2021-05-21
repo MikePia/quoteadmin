@@ -5,16 +5,17 @@ from quotedb.utils import util
 from quotedb.finnhub.finncandles import FinnCandles
 
 from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from .businessops import BusinessOps
-from .forms import StartCandlesAllQuotes
-from .forms import StartCandleCandles
-from .forms import StartWebsocket
-
+from .forms import (StartCandlesAllQuotes,  StartCandleCandles,
+                    StartWebsocket, ProcessVisualizeData,
+                    VisualizeData)
 
 thebop = None       # for startAllQuotes
 thebebop = None     # for startCandleCandles
 thebebopsocket = None    # For web socket, copied from thebebop
+thebebopprocessing = None
 
 
 def startAllQuotes(request):
@@ -56,13 +57,19 @@ def startAllQuotes(request):
         form = StartCandlesAllQuotes()
     form_candles = StartCandleCandles()
     form_websocket = StartWebsocket()
+    form_processdata = ProcessVisualizeData()
+    form_visualizedata = VisualizeData()
 
     return render(request, 'form.html', {'form_quotes': form,
                                          'form_candles': form_candles,
                                          'form_websocket': form_websocket,
+                                         'form_processdata': form_processdata,
+                                         'form_visualizedata': form_visualizedata,
                                          'thebop': thebop,
                                          'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket})
+                                         'thebebopsocket': thebebopsocket,
+                                         'thebebopprocessing': thebebopprocessing,
+                                         })
 
 
 def startCandleCandles(request):
@@ -90,17 +97,25 @@ def startCandleCandles(request):
             # Need the stocks first then reinitialize bop.fc with it
             bop.fc = FinnCandles(stocks)
             bop.startCandles(start=start, model=CandlesModel, latest=True, numcycles=num_gainerslosers)
+            messages.success(request, 'Started gathering candles')
 
     else:
+        messages.warning(request, "Failed to validate the candles form")
         form_candles = StartCandleCandles()
-    form = StartCandlesAllQuotes()
+    form_quotes = StartCandlesAllQuotes()
     form_websocket = StartWebsocket()
-    return render(request, 'form.html', {'form_quotes': form,
+    form_processdata = ProcessVisualizeData()
+    form_visualizedata = VisualizeData()
+    return render(request, 'form.html', {'form_quotes': form_quotes,
                                          'form_candles': form_candles,
                                          'form_websocket': form_websocket,
+                                         'form_processdata': form_processdata,
+                                         'form_visualizedata': form_visualizedata,
                                          'thebop': thebop,
                                          'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket})
+                                         'thebebopsocket': thebebopsocket,
+                                         'thebebopprocessing': thebebopprocessing
+                                         })
 
 
 def startWebsocket(request):
@@ -125,7 +140,7 @@ def startWebsocket(request):
             if bop:
                 bop.startWebSocket(start, None, numstocks, fn)
                 messages.success(request, 'Web socket started')
-                
+
             else:
                 messages.error(request, "Missing the stocks. Please run startCandles")
     else:
@@ -133,12 +148,109 @@ def startWebsocket(request):
 
     form_quotes = StartCandlesAllQuotes()
     form_candles = StartCandleCandles()
+    form_processdata = ProcessVisualizeData()
+    form_visualizedata = VisualizeData()
     return render(request, 'form.html', {'form_quotes': form_quotes,
                                          'form_candles': form_candles,
                                          'form_websocket': form_websocket,
+                                         'form_processdata': form_processdata,
+                                         'form_visualizedata': form_visualizedata,
                                          'thebop': thebop,
                                          'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket
+                                         'thebebopsocket': thebebopsocket,
+                                         'thebebopprocessing': thebebopprocessing,
+
                                          })
 
-    pass
+
+def processVisualizeData(request):
+    global thebebopprocessing
+    ofn = None
+    if request.method == "POST":
+        if thebebopprocessing and thebebopprocessing.processingdata:
+            thebebopprocessing.stopProcessing()
+            messages.success(request, "Stopping the data processing")
+            thebebopprocessing = None
+        form_processdata = ProcessVisualizeData(request.POST)
+        if form_processdata.is_valid():
+            filename = form_processdata.cleaned_data['filename']
+            outfile = form_processdata.cleaned_data['outfile']
+            srate = float(form_processdata.cleaned_data['sampleRate'])
+            fq = form_processdata.cleaned_data['fq'].replace(tzinfo=None)
+            fq = util.dt2unix_ny(pd.Timestamp(fq))
+            if not thebebopprocessing:
+                thebebopprocessing = BusinessOps([])
+            thebebopprocessing.processingdata = False
+            ofn = thebebopprocessing.processData(filename=filename, srate=srate, fq=fq, outfile=outfile)
+    else:
+        form_processdata = ProcessVisualizeData()
+    form_quotes = StartCandlesAllQuotes()
+    form_candles = StartCandleCandles()
+    form_websocket = StartWebsocket()
+    form_visualizedata = VisualizeData()
+    return render(request, 'form.html', {'form_quotes': form_quotes,
+                                         'form_candles': form_candles,
+                                         'form_websocket': form_websocket,
+                                         'form_processdata': form_processdata,
+                                         'form_visualizedata': form_visualizedata,
+                                         'thebop': thebop,
+                                         'thebebop': thebebop,
+                                         'thebebopsocket': thebebopsocket,
+                                         'thebebopprocessing': thebebopprocessing,
+                                         'outfilename': ofn
+                                         })
+
+
+def getVisualData(request):
+    if request.method == 'POST':
+        form_visualizedata = VisualizeData(request.POST)
+        if form_visualizedata.is_valid():
+            filename = form_visualizedata.cleaned_data['filename']
+            viewchoice = form_visualizedata.cleaned_data['viewchoice']
+        bop = BusinessOps([])
+        if viewchoice == "get_data":
+            jdata = bop.openJsonFile(filename)
+            if jdata:
+                return JsonResponse(jdata, safe=False)
+        elif viewchoice == "view_info":
+            finfo = bop.getFileInfo(filename)
+            if finfo:
+                return JsonResponse(finfo)
+
+    form_quotes = StartCandlesAllQuotes()
+    form_candles = StartCandleCandles()
+    form_websocket = StartWebsocket()
+    form_processdata = ProcessVisualizeData()
+    form_visualizedata = VisualizeData()
+
+    return render(request, 'form.html', {'form_quotes': form_quotes,
+                                         'form_candles': form_candles,
+                                         'form_websocket': form_websocket,
+                                         'form_processdata': form_processdata,
+                                         'form_visualizedata': form_visualizedata,
+                                         'thebop': thebop,
+                                         'thebebop': thebebop,
+                                         'thebebopsocket': thebebopsocket,
+                                         'thebebopprocessing': thebebopprocessing
+                                         })
+
+
+def getVisualFilenames(request):
+    bop = BusinessOps([])
+    fnames = bop.getVisualFilenames()
+    if fnames:
+        return JsonResponse(fnames)
+    return JsonResponse({"No visual data found"})
+    print()
+
+
+def getVisualFile(request, filename):
+    """Return the latest matching file matching filename
+    Latest is determined by the filename and the timestamp in its name
+    """
+    print()
+    bop = BusinessOps([])
+    jdata = bop.getVisualFile(filename)
+    if jdata:
+        return JsonResponse(jdata, safe=False)
+    return JsonResponse({'error': f"File not found with visual data matching {filename}"})

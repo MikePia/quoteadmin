@@ -74,3 +74,10 @@ https://certbot.eff.org/lets-encrypt/ubuntubionic-nginx
 
 * To allow big size data make changes to nginx files by adding client_max_body_size 100M
 
+### psql to connect to remote db
+
+$ sudo ufw allow 5432/tcp
+$ sudo systemctl restart postgresql
+sudo su - postgres
+$ psql -h database-1.cilvogad6ynt.us-east-2.rds.amazonaws.com -d  quotedb  -U quotedbuser 
+quotedb=> select count(*) from allquotes;

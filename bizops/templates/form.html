@@ -19,9 +19,7 @@
         h1 {
             padding-bottom: 20px;
         }
-        .toast {
-            color: blue;
-        }
+        
     </style>
 </head>
 <body>
@@ -51,7 +49,16 @@
       </nav>
       {% if messages  %}
           {% for message in messages %}
-              {{ message }}
+          <div class="toast align-items-center text-black bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body">
+                  {{ message }}
+              </div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+
+
           {% endfor %}
       {% endif %}
 
@@ -133,8 +140,8 @@
                         </form>
                         <form action="websockets" method="post">
                             {% csrf_token %}
-                            {% if thebebopsocket %}
-                            <ul><li> <button class="btn btn-primary" type="submit">Stop Candles</button> </li></ul>
+                            {% if thebebopsocket and thebebopsocket.socketisrunning %}
+                            <ul><li> <button class="btn btn-primary" type="submit">Stop Web socket</button> </li></ul>
                             {% endif %}
 
                         </form>
@@ -142,29 +149,62 @@
                 </div>
                 
             </div>
-            <!-- Form 3 for biz process 3 start web socket -->
+            <!-- Form 4 processing visualize data -->
             <div class="col-sm-3">
 
                 <div class="card">
                     <h3 class="card-title">Process Visualize data </h3>
                     <div class="card-body">
                         
-                        <form method="post">
+                        <form action="processdata" method="post">
                             {% csrf_token %}
                             <ul>
-                                {{ form_quotes.as_ul}}
+                                <li>Still here</li>
+                                {{ form_processdata.as_ul}}
+                                <li><button class="btn btn-primary" type="submit">Submit</button></li>
                             </ul>
-                            <button type="submit">Submit</button>
+                        </form>
+                        <form action="websockets" method="post">
+                            {% csrf_token %}
+                            {% if thebebopprocessing and thebebopprocessing.processingdata %}
+                            <ul><li> <button class="btn btn-secondary" type="submit">Stop processing</button> </li></ul>
+                            {% endif %}
+
+                        </form>
+                    </div>
+                </div>
+                
+            </div>
+            <div>
+                <hr>
+            </div>
+            <div class="col-sm-3">
+
+                <div class="card">
+                    <h3 class="card-title">Get the  data </h3>
+                    <div class="card-body">
+                        
+                        <form action="viewdata" method="post">
+                            {% csrf_token %}
+                            <ul>
+                                {{ form_visualizedata.as_ul}}
+                                <li><button class="btn btn-primary" type="submit">Submit</button></li>
+                            </ul>
                         </form>
                     </div>
                 </div>
                 
             </div>
 
+
         </div>  
-        <div>
-            <hr>
-        </div>
+        
     </div>
+    <script >
+        var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+        var toastList = toastElList.map(function (toastEl) {
+            return new bootstrap.Toast(toastEl, option)
+        })
+    </script>
 </body>
 </html>
