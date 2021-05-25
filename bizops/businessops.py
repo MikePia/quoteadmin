@@ -10,6 +10,8 @@ from quotedb.finnhub.finntrade_ws import ProcessData
 from quotedb.getdata import (getJustGainersLosers, startTickWS)
 # from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
+from quotedb.scripts.runscript import runScript
+from quotedb.scripts.isrunning import is_running
 from . forms import getVisualFiles
 
 
@@ -43,8 +45,24 @@ class BusinessOps:
             stocks = sp500.getQ100_Sp500()
         return stocks
 
+    def startCandles(self, *args, kwargs):
+
+        if is_running('startcandles'):
+            self.running = True
+            return
+        self.running = False
+        fn = "startcandles.py"
+        runScript(fn, kwargs)
+        time.sleep(3)
+        for i in range(3):
+            if is_running("startcandles.py"):
+                self.isrunning = True
+                break
+            else:
+                time.sleep(3)
+
     # def startCandles(self, start, model=CandlesModel, latest=False, numcycles=9999999999):
-    def startCandles(self, *args, **kwargs):
+    def startCandlesold(self, *args, **kwargs):
         if self.isrunning:
             return
         self.fc.keepGoing = True
@@ -191,7 +209,6 @@ class BusinessOps:
         if not maxname:
             return None
         return self.openJsonFile(maxname)
-
 
 
 if __name__ == '__main__':

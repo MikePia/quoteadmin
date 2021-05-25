@@ -1,8 +1,11 @@
+import os
 import pandas as pd
 from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
 from quotedb.utils import util
 from quotedb.finnhub.finncandles import FinnCandles
+from quotedb.scripts.isrunning import is_running
+from quotedb.scripts.kill_from_pid import killFromPid
 
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -20,10 +23,13 @@ thebebopprocessing = None
 
 def startAllQuotes(request):
     global thebop
+    if not is_running("startcandles.py") and thebop:
+        thebop.isrunning = False
     if request.method == "POST":
 
         if thebop and thebop.isrunning:
-            thebop.fc.keepGoing = False
+            pidfile = os.path.join(os.environ['RUNDIR'], "startcandles.pid")
+            killFromPid(pidfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
             # form.finncandles_allquotes = None
             thebop.isrunning = False
@@ -32,8 +38,8 @@ def startAllQuotes(request):
         form = StartCandlesAllQuotes(request.POST)
         if form.is_valid():
             dadate = form.cleaned_data['dadate']
-            start = dadate.replace(tzinfo=None)
-            start = util.dt2unix_ny(pd.Timestamp(start))
+            # start = dadate.replace(tzinfo=None)
+            # start = util.dt2unix_ny(pd.Timestamp(start))
 
             numrepeats = form.cleaned_data['numrepeats']
             numrepeats = 10000 if numrepeats == 'unlimited' else int(numrepeats)
@@ -43,7 +49,10 @@ def startAllQuotes(request):
             messages.success(request, 'Candle form was processed')
             bop = BusinessOps(stocks)
             thebop = bop
-            bop.startCandles(start=start, model=AllquotesModel, latest=latest, numcycles=numrepeats)
+            kwargs = {"-s": stocks, "-m": "allquotes", "-d": dadate.strftime("%m-%d-%Y %H:%M"), '-n': str(numrepeats)}
+            # if latest:
+            #     kwargs['-l'] = None
+            bop.startCandles(kwargs=kwargs)
             form.finncandles_allquotes = True
 
         else:
