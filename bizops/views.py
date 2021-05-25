@@ -23,11 +23,14 @@ thebebopprocessing = None
 
 def startAllQuotes(request):
     global thebop
-    if not is_running("startcandles.py") and thebop:
-        thebop.isrunning = False
+    if thebop:
+        if is_running("startcandles.py"):
+            thebop.isrunning = True
+        else:
+            thebop.isrunning = False
     if request.method == "POST":
 
-        if thebop and thebop.isrunning:
+        if is_running("startcandles"):
             pidfile = os.path.join(os.environ['RUNDIR'], "startcandles.pid")
             killFromPid(pidfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
