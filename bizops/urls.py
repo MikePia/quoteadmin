@@ -10,4 +10,5 @@ urlpatterns = [
     path('viewdata', views.getVisualData, name="getVisualData"),
     path('visualfilenames', views.getVisualFilenames, name="getVisualFilenames"),
     path('visualfile/<str:filename>/', views.getVisualFile, name='getVisualFile'),
+    path('sleepy', views.sleepy, name='sleepy')
 ]

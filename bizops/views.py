@@ -14,6 +14,8 @@ from .businessops import BusinessOps
 from .forms import (StartCandlesAllQuotes,  StartCandleCandles,
                     StartWebsocket, ProcessVisualizeData,
                     VisualizeData)
+from .tasks import sleepy as sleepytask
+from .tasks import startCandles as startCandlesTask
 
 thebop = None       # for startAllQuotes
 thebebop = None     # for startCandleCandles
@@ -41,8 +43,8 @@ def startAllQuotes(request):
         form = StartCandlesAllQuotes(request.POST)
         if form.is_valid():
             dadate = form.cleaned_data['dadate']
-            # start = dadate.replace(tzinfo=None)
-            # start = util.dt2unix_ny(pd.Timestamp(start))
+            start = dadate.replace(tzinfo=None)
+            start = util.dt2unix_ny(pd.Timestamp(start))
 
             numrepeats = form.cleaned_data['numrepeats']
             numrepeats = 10000 if numrepeats == 'unlimited' else int(numrepeats)
@@ -50,12 +52,8 @@ def startAllQuotes(request):
 
             latest = form.cleaned_data['latest']
             messages.success(request, 'Candle form was processed')
-            bop = BusinessOps(stocks)
-            thebop = bop
-            kwargs = {"-s": stocks, "-m": "allquotes", "-d": dadate.strftime("%m-%d-%Y %H:%M"), '-n': str(numrepeats)}
-            # if latest:
-            #     kwargs['-l'] = None
-            bop.startCandles(kwargs=kwargs)
+            startCandlesTask(start, stocks, AllquotesModel, latest, numrepeats)
+            # bop.startCandlesold(kwargs)
             form.finncandles_allquotes = True
 
         else:
@@ -266,3 +264,8 @@ def getVisualFile(request, filename):
     if jdata:
         return JsonResponse(jdata, safe=False)
     return JsonResponse({'error': f"File not found with visual data matching {filename}"})
+
+
+def sleepy(request):
+    sleepytask(12)
+    return HttpResponse('Done sleepy like!')
