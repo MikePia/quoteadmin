@@ -17,34 +17,37 @@ from . forms import getVisualFiles
 from quotedb.utils import util
 
 
+def getStocks(stocks):
+    if stocks == 'all':
+        print('all stocks')
+        stocks = sp500.getSymbols()
+        print(len(stocks))
+    elif stocks == 's&p500':
+        stocks = sp500.sp500symbols
+    elif stocks == 'nasdaq100':
+        stocks = sp500.nasdaq100symbols
+    elif stocks == 's&p_q100':
+        stocks = sp500.getQ100_Sp500()
+    return stocks
+
 class BusinessOps:
     startcandle_pid = -1
     candlestocks = None
     websocketstocks = None
-    threadkeepgoing = True
     socketisrunning = False
     processingdata = False
 
     def __init__(self, stocks):
-        self.stocks = self.getStocks(stocks)
+        self.stocks = getStocks(stocks)
         self.fc = FinnCandles(self.stocks)
         self.isrunning = False
         self.outname = ''
 
-    def getStocks(self, stocks):
-        if stocks == 'all':
-            print('all stocks')
-            stocks = sp500.getSymbols()
-            print(len(stocks))
-        elif stocks == 's&p500':
-            stocks = sp500.sp500symbols
-        elif stocks == 'nasdaq100':
-            stocks = sp500.nasdaq100symbols
-        elif stocks == 's&p_q100':
-            stocks = sp500.getQ100_Sp500()
-        return stocks
+    
 
-    def startCandles(self, start, model, latest, numcycles):
+    def startCandles(self, start, stopcks, model, latest, numcycles):
+        """
+        """
 
         if is_running('startcandles'):
             self.running = True
@@ -52,28 +55,22 @@ class BusinessOps:
         self.running = False
 
         self.fc.cycleStockCandles(start=start, model=model, latest=latest, numcycles=numcycles)
-        # runScript(fn, kwargs)
-        # time.sleep(3)
-        # for i in range(3):
-        #     if is_running("startcandles.py"):
-        #         self.isrunning = True
-        #         break
-        #     else:
-        #         time.sleep(3)
 
-    # def startCandles(self, start, model=CandlesModel, latest=False, numcycles=9999999999):
     def startCandlesold(self, *args, **kwargs):
         if self.isrunning:
             return
-        self.fc.keepGoing = True
         if isinstance(kwargs['start'], dt.datetime):
             kwargs['start'] = util.dt2unix_ny(kwargs['start'])
         t = Thread(target=self.fc.cycleStockCandles, kwargs=kwargs)
         t.start()
         self.isrunning = True
 
-    def stop(self):
-        self.fc.keepGoing = False
+    def stopCandles(self, p):
+        for _ in range(4):
+            if not is_running(p):
+                self.isrunning = False
+                break
+            time.sleep(2)
 
     def getGainersLosers(self, start, stocks, model, numrec=50):
         end = util.dt2unix(dt.datetime.utcnow())

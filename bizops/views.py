@@ -3,7 +3,9 @@ import pandas as pd
 from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
 from quotedb.utils import util
-from quotedb.finnhub.finncandles import FinnCandles
+from quotedb.finnhub.finncandles import FinnCandles, keepGoing, stopProcess
+
+
 from quotedb.scripts.isrunning import is_running
 from quotedb.scripts.kill_from_pid import killFromPid
 
@@ -24,21 +26,13 @@ thebebopprocessing = None
 
 
 def startAllQuotes(request):
-    global thebop
-    if thebop:
-        if is_running("startcandles.py"):
-            thebop.isrunning = True
-        else:
-            thebop.isrunning = False
+    rfile = "startcandles.pid"
+    candlesrunning = keepGoing(rfile)
     if request.method == "POST":
 
-        if is_running("startcandles"):
-            pidfile = os.path.join(os.environ['RUNDIR'], "startcandles.pid")
-            killFromPid(pidfile)
+        if keepGoing(rfile):
+            stopProcess(rfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
-            # form.finncandles_allquotes = None
-            thebop.isrunning = False
-            thebop = None
 
         form = StartCandlesAllQuotes(request.POST)
         if form.is_valid():
@@ -52,7 +46,8 @@ def startAllQuotes(request):
 
             latest = form.cleaned_data['latest']
             messages.success(request, 'Candle form was processed')
-            startCandlesTask(start, stocks, AllquotesModel, latest, numrepeats)
+            startCandlesTask.delay(start, stocks, latest, numrepeats)
+            candlesrunning = True
             # bop.startCandlesold(kwargs)
             form.finncandles_allquotes = True
 
@@ -75,7 +70,7 @@ def startAllQuotes(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebop': thebop,
+                                         'candlesrunning': candlesrunning,
                                          'thebebop': thebebop,
                                          'thebebopsocket': thebebopsocket,
                                          'thebebopprocessing': thebebopprocessing,
@@ -178,7 +173,7 @@ def processVisualizeData(request):
     ofn = None
     if request.method == "POST":
         if thebebopprocessing and thebebopprocessing.processingdata:
-            thebebopprocessing.stopProcessing()
+            thebebopprocessing.stopProcess()
             messages.success(request, "Stopping the data processing")
             thebebopprocessing = None
         form_processdata = ProcessVisualizeData(request.POST)
@@ -267,5 +262,5 @@ def getVisualFile(request, filename):
 
 
 def sleepy(request):
-    sleepytask(12)
+    sleepytask.delay(12)
     return HttpResponse('Done sleepy like!')

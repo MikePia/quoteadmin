@@ -87,7 +87,7 @@
                         </form>
                         <form action="allquotes" method="post">
                             {% csrf_token %}
-                            {% if thebop %}
+                            {% if candlesrunning %}
 
                                 <button class="btn btn-primary" type="submit">Stop Candles</button>
                             {% endif %}
