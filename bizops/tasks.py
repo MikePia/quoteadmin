@@ -14,7 +14,7 @@ def sleepy(duration):
     
     while True:
         sleep(15)
-        if not util.isRunningfile(rfile):
+        if not util.isRunning(rfile):
             print('file has been deleted')
             break
     return None
