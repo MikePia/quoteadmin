@@ -23,5 +23,5 @@ def sleepy(duration):
 @shared_task
 def startCandles(start, stocks, latest, numcycles):
     fc = FinnCandles(getStocks(stocks))
-    fc.cycleStockCandles(start=start, stocks=stocks, model=AllquotesModel, latest=latest, numcycles=numcycles)
+    fc.cycleStockCandles(start=start,model=AllquotesModel,lastes=latest, numcycles=numcycles)
     return None
