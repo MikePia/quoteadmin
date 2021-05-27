@@ -3,7 +3,7 @@ import pandas as pd
 from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
 from quotedb.utils import util
-from quotedb.finnhub.finncandles import FinnCandles, keepGoing, stopProcess
+from quotedb.finnhub.finncandles import FinnCandles, isRunning, stopProcess
 
 
 from quotedb.scripts.isrunning import is_running
@@ -27,10 +27,10 @@ thebebopprocessing = None
 
 def startAllQuotes(request):
     rfile = "startcandles.pid"
-    candlesrunning = keepGoing(rfile)
+    candlesrunning = isRunning(rfile)
     if request.method == "POST":
 
-        if keepGoing(rfile):
+        if isRunning(rfile):
             stopProcess(rfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
 

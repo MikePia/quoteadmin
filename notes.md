@@ -81,3 +81,23 @@ $ sudo systemctl restart postgresql
 sudo su - postgres
 $ psql -h database-1.cilvogad6ynt.us-east-2.rds.amazonaws.com -d  quotedb  -U quotedbuser 
 quotedb=> select count(*) from allquotes;
+
+# The Rube Goldberg version of Django-Redis-Celery-Nginx
+### In threee separate cosoles
+* sudo redis-server
+* gunicorn -b 0.0.0.0:8000 -w 3 quotad.wsgi:application
+* celery -A quotad worker -l info
+
+### Update a file tasks.py
+1. stop gunicorn
+2. stop celery worker
+3. in gunicorn
+  * deactivate
+  * source /home/ubuntu/home/envadmin/bin/activate
+  * gunicorn -b 0.0.0.0:8000 -w 3 quotad.wsgi:application
+4. in celery console
+  * deactivate
+  * source /home/ubuntu/home/envadmin/bin/activate
+  * celery -A quotad worker -l info
+
+

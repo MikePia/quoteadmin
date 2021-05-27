@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
 from django.conf import settings
@@ -12,12 +12,16 @@ app = Celery('quotad')
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings')
+
+# app.config_from_object('django.conf:settings')  # old windows
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+# app.autodiscover_tasks(lambda: settings.INSTALLED_APPS) # Old Windows
+app.autodiscover_tasks()
 
 
 @app.task(bind=True)
 def debug_task(self):
-    print('Request: {0!r}'.format(self.request))
+    print('Requeeeeeeeeeeeeest: {0!r}'.format(self.request))
