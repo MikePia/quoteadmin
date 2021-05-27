@@ -15,7 +15,6 @@ from .forms import (StartCandlesAllQuotes,  StartCandleCandles,
 from .tasks import sleepy as sleepytask
 from .tasks import startCandles as startCandlesTask
 
-thebop = None       # for startAllQuotes
 thebebop = None     # for startCandleCandles
 thebebopsocket = None    # For web socket, copied from thebebop
 thebebopprocessing = None
@@ -112,7 +111,6 @@ def startCandleCandles(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebop': thebop,
                                          'thebebop': thebebop,
                                          'thebebopsocket': thebebopsocket,
                                          'thebebopprocessing': thebebopprocessing
@@ -156,7 +154,6 @@ def startWebsocket(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebop': thebop,
                                          'thebebop': thebebop,
                                          'thebebopsocket': thebebopsocket,
                                          'thebebopprocessing': thebebopprocessing,
@@ -194,7 +191,6 @@ def processVisualizeData(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebop': thebop,
                                          'thebebop': thebebop,
                                          'thebebopsocket': thebebopsocket,
                                          'thebebopprocessing': thebebopprocessing,
@@ -229,7 +225,6 @@ def getVisualData(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebop': thebop,
                                          'thebebop': thebebop,
                                          'thebebopsocket': thebebopsocket,
                                          'thebebopprocessing': thebebopprocessing
