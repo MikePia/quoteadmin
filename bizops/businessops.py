@@ -30,6 +30,7 @@ def getStocks(stocks):
         stocks = sp500.getQ100_Sp500()
     return stocks
 
+
 class BusinessOps:
     startcandle_pid = -1
     candlestocks = None
@@ -42,8 +43,6 @@ class BusinessOps:
         self.fc = FinnCandles(self.stocks)
         self.isrunning = False
         self.outname = ''
-
-    
 
     def startCandles(self, start, stopcks, model, latest, numcycles):
         """
