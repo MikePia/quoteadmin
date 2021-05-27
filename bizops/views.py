@@ -1,13 +1,9 @@
-import os
 import pandas as pd
 from quotedb.models.allquotes_candlemodel import AllquotesModel
 from quotedb.models.candlesmodel import CandlesModel
 from quotedb.utils import util
-from quotedb.finnhub.finncandles import FinnCandles, isRunning, stopProcess
 
-
-from quotedb.scripts.isrunning import is_running
-from quotedb.scripts.kill_from_pid import killFromPid
+from quotedb.finnhub.finncandles import FinnCandles
 
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -27,11 +23,11 @@ thebebopprocessing = None
 
 def startAllQuotes(request):
     rfile = "startcandles.pid"
-    candlesrunning = isRunning(rfile)
+    candlesrunning = util.isRunning(rfile)
     if request.method == "POST":
 
-        if isRunning(rfile):
-            stopProcess(rfile)
+        if util.isRunning(rfile):
+            util.stopRunning(rfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
 
         form = StartCandlesAllQuotes(request.POST)
