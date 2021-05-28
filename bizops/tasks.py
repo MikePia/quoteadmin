@@ -30,7 +30,7 @@ def startCandles(start, stocks, latest, numcycles):
 
 
 @shared_task
-def startCandleCandles(start, stocks, latest, numcycles, numrecs):
+def startCandleCandlesTask(start, stocks, latest, numcycles, numrecs):
     stocks = getStocks(stocks)
     end = util.dt2unix(dt.datetime.utcnow())
     stocks = getJustGainersLosers(start, end, stocks, numrecs, AllquotesModel, local=False)

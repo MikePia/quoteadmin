@@ -20,7 +20,7 @@ class StartCandlesAllQuotes(forms.Form):
     finncandles_candles = None
 
 
-class StartCandleCandles(forms.Form):
+class StartCandleCandlesForm(forms.Form):
     # stocks, fn, store, delt=None, polltime=5)
     start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}), input_formats=['%Y-%m-%d %H:%M'])
     numrepeats = forms.ChoiceField(choices=numrepeats_choice, required=False)

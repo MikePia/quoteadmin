@@ -9,18 +9,18 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from .businessops import BusinessOps
-from .forms import (StartCandlesAllQuotes,  StartCandleCandles,
+from .forms import (StartCandlesAllQuotes,  StartCandleCandlesForm,
                     StartWebsocket, ProcessVisualizeData,
                     VisualizeData)
 from .tasks import sleepy as sleepytask
-from .tasks import startCandles as startCandlesTask, startCandleCandles as startCandleCandlesTask
+from .tasks import startCandles as startCandlesTask, startCandleCandlesTask
 
 thebebop = None     # for startCandleCandles
 thebebopsocket = None    # For web socket, copied from thebebop
 thebebopprocessing = None
 
 QUOTERUNNING = False
-CANDLERUNNING =  False
+CANDLERUNNING = False
 SOCKETRUNNING = False
 QUOTEPID = "startcandles.pid"
 CANDLEPID = "startcandlecandles.pid"
@@ -64,7 +64,7 @@ def startAllQuotes(request):
     else:
         # Uninit for for GET
         form = StartCandlesAllQuotes()
-    form_candles = StartCandleCandles()
+    form_candles = StartCandleCandlesForm()
     form_websocket = StartWebsocket()
     form_processdata = ProcessVisualizeData()
     form_visualizedata = VisualizeData()
@@ -88,10 +88,10 @@ def startCandleCandles(request):
             util.stopRunning(CANDLEPID)
             messages.success(request, "Stopping candle gathering for the candles table")
             CANDLERUNNING = False
-            form_candles = StartCandleCandles(request.POST)
+            form_candles = StartCandleCandlesForm(request.POST)
         else:
 
-            form_candles = StartCandleCandles(request.POST)
+            form_candles = StartCandleCandlesForm(request.POST)
 
             if form_candles.is_valid():
                 start = form_candles.cleaned_data['start']
@@ -110,7 +110,7 @@ def startCandleCandles(request):
 
     else:
         messages.warning(request, "Failed to validate the candles form")
-        form_candles = StartCandleCandles()
+        form_candles = StartCandleCandlesForm()
     form_quotes = StartCandlesAllQuotes()
     form_websocket = StartWebsocket()
     form_processdata = ProcessVisualizeData()
@@ -155,7 +155,7 @@ def startWebsocket(request):
         form_websocket = StartWebsocket()
 
     form_quotes = StartCandlesAllQuotes()
-    form_candles = StartCandleCandles()
+    form_candles = StartCandleCandlesForm()
     form_processdata = ProcessVisualizeData()
     form_visualizedata = VisualizeData()
     return render(request, 'form.html', {'form_quotes': form_quotes,
@@ -191,7 +191,7 @@ def processVisualizeData(request):
     else:
         form_processdata = ProcessVisualizeData()
     form_quotes = StartCandlesAllQuotes()
-    form_candles = StartCandleCandles()
+    form_candles = StartCandleCandlesForm()
     form_websocket = StartWebsocket()
     form_visualizedata = VisualizeData()
     return render(request, 'form.html', {'form_quotes': form_quotes,
@@ -223,7 +223,7 @@ def getVisualData(request):
                 return JsonResponse(finfo)
 
     form_quotes = StartCandlesAllQuotes()
-    form_candles = StartCandleCandles()
+    form_candles = StartCandleCandlesForm()
     form_websocket = StartWebsocket()
     form_processdata = ProcessVisualizeData()
     form_visualizedata = VisualizeData()
