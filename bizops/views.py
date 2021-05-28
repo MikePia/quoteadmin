@@ -13,22 +13,28 @@ from .forms import (StartCandlesAllQuotes,  StartCandleCandles,
                     StartWebsocket, ProcessVisualizeData,
                     VisualizeData)
 from .tasks import sleepy as sleepytask
-from .tasks import startCandles as startCandlesTask
+from .tasks import startCandles as startCandlesTask, startCandleCandles as startCandleCandlesTask
 
 thebebop = None     # for startCandleCandles
 thebebopsocket = None    # For web socket, copied from thebebop
 thebebopprocessing = None
 
+QUOTERUNNING = False
+CANDLERUNNING =  False
+SOCKETRUNNING = False
+QUOTEPID = "startcandles.pid"
+CANDLEPID = "startcandlecandles.pid"
+SOCKETPID = "socket.pid"
 
 def startAllQuotes(request):
-    rfile = "startcandles.pid"
-    candlesrunning = util.isRunning(rfile)
+    global QUOTERUNNING
+    QUOTERUNNING = util.isRunning(QUOTEPID)
     if request.method == "POST":
 
-        if util.isRunning(rfile):
-            util.stopRunning(rfile)
+        if QUOTERUNNING:
+            util.stopRunning(QUOTEPID)
             messages.success(request, "Stopping candle gathering for the allquotes table")
-            candlesrunning = False
+            QUOTERUNNING = False
             form = StartCandlesAllQuotes()
         else:
 
@@ -45,7 +51,7 @@ def startAllQuotes(request):
                 latest = form.cleaned_data['latest']
                 messages.success(request, 'Candle form was processed')
                 startCandlesTask.delay(start, stocks, latest, numrepeats)
-                candlesrunning = True
+                QUOTERUNNING = True
                 # bop.startCandlesold(kwargs)
                 form.finncandles_allquotes = True
 
@@ -68,39 +74,39 @@ def startAllQuotes(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'candlesrunning': candlesrunning,
-                                         'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket,
-                                         'thebebopprocessing': thebebopprocessing,
+                                         'quoterunning': QUOTERUNNING,
+                                         'candlerunning': CANDLERUNNING,
+                                         'socketrunning': SOCKETRUNNING
                                          })
 
 
 def startCandleCandles(request):
-    global thebebop
-    global thebebopsocket
+    global CANDLERUNNING
+    CANDLERUNNING = util.isRunning(CANDLEPID)
     if request.method == "POST":
-        if thebebop and thebebop.isrunning:
-            thebebop.fc.keepGoing = False
+        if CANDLERUNNING:
+            util.stopRunning(CANDLEPID)
             messages.success(request, "Stopping candle gathering for the candles table")
-            thebebop.isrunning = False
-            thebebopsocket = thebebop
-            thebebop = None
-        form_candles = StartCandleCandles(request.POST)
+            CANDLERUNNING = False
+            form_candles = StartCandleCandles(request.POST)
+        else:
 
-        if form_candles.is_valid():
-            start = form_candles.cleaned_data['start']
-            start = start.replace(tzinfo=None)
-            start = util.dt2unix_ny(pd.Timestamp(start))
+            form_candles = StartCandleCandles(request.POST)
 
-            num_gainerslosers = form_candles.cleaned_data['num_gainerslosers']
+            if form_candles.is_valid():
+                start = form_candles.cleaned_data['start']
+                start = start.replace(tzinfo=None)
+                start = util.dt2unix_ny(pd.Timestamp(start))
+                stocks = form_candles.cleaned_data['stocks']
+                numrepeats = form_candles.cleaned_data['numrepeats']
 
-            bop = BusinessOps([])
-            stocks = bop.getGainersLosers(start=start, stocks=[], model=AllquotesModel)
-            thebebop = bop
-            # Need the stocks first then reinitialize bop.fc with it
-            bop.fc = FinnCandles(stocks)
-            bop.startCandles(start=start, model=CandlesModel, latest=True, numcycles=num_gainerslosers)
-            messages.success(request, 'Started gathering candles')
+                num_gainerslosers = form_candles.cleaned_data['num_gainerslosers']
+                latest = False
+                messages.success(request, 'Candle form was processed')
+
+                startCandleCandlesTask.delay()(start, stocks, latest, numrepeats, num_gainerslosers)
+                messages.success(request, 'Started gathering candles')
+                CANDLERUNNING = True
 
     else:
         messages.warning(request, "Failed to validate the candles form")
@@ -114,9 +120,9 @@ def startCandleCandles(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket,
-                                         'thebebopprocessing': thebebopprocessing
+                                         'quoterunning': QUOTERUNNING,
+                                         'candlerunning': CANDLERUNNING,
+                                         'socketrunning': SOCKETRUNNING
                                          })
 
 
@@ -157,10 +163,9 @@ def startWebsocket(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket,
-                                         'thebebopprocessing': thebebopprocessing,
-
+                                         'quoterunning': QUOTERUNNING,
+                                         'candlerunning': CANDLERUNNING,
+                                         'socketrunning': SOCKETRUNNING
                                          })
 
 

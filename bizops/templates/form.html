@@ -87,7 +87,7 @@
                         </form>
                         <form action="allquotes" method="post">
                             {% csrf_token %}
-                            {% if candlesrunning %}
+                            {% if quoterunning %}
 
                                 <button class="btn btn-primary" type="submit">Stop Candles</button>
                             {% endif %}
@@ -108,15 +108,15 @@
                         
                         <form action="candles" method="post">
                             {% csrf_token %}
-                            <ul>
+                            <ul class="list-group">
                                 {{ form_candles.as_ul}}
-                                <li> <button class="btn btn-primary" type="submit">Submit</button> </li>
+                                 <li><button class="btn btn-primary" type="submit">Submit</button> </li>
                             </ul>
                         </form>
                         <form action="candles" method="post">
                             {% csrf_token %}
                             {% if thebebop %}
-                            <ul><li> <button class="btn btn-primary" type="submit">Stop Candles</button> </li></ul>
+                             <button class="btn btn-primary" type="submit">Stop Candles</button> 
                             {% endif %}
                             
                         </form>
@@ -140,7 +140,7 @@
                         </form>
                         <form action="websockets" method="post">
                             {% csrf_token %}
-                            {% if thebebopsocket and thebebopsocket.socketisrunning %}
+                            {% if candlerunning %}
                             <ul><li> <button class="btn btn-primary" type="submit">Stop Web socket</button> </li></ul>
                             {% endif %}
 
@@ -166,7 +166,7 @@
                         </form>
                         <form action="websockets" method="post">
                             {% csrf_token %}
-                            {% if thebebopprocessing and thebebopprocessing.processingdata %}
+                            {% if socketrunning %}
                             <ul><li> <button class="btn btn-secondary" type="submit">Stop processing</button> </li></ul>
                             {% endif %}
 

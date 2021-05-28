@@ -3,18 +3,18 @@ import os
 from django import forms
 from quotedb.utils import util
 
+numrepeats_choice = [('0', '0'), ('1', '1'), ('2', '2'),
+                     ('3', '3'), ('4', '4'), ('5', '5'),
+                     ('6', '6'), ('7', '7'), ('8', '8'),
+                     ('9', '9'), ('1', '10'), ('unlimited', 'Unlimited')]
+stocks_choices = [("all", "All"), ("s&p500", "S&P500"), ("nasdaq100", "Nasdaq100"),
+                  ("s&p_q100", "S&P_Q100"), ("custom", "Custom")]
+
 
 class StartCandlesAllQuotes(forms.Form):
     dadate = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}))
-    numrepeats = forms.ChoiceField(choices=[('0', '0'), ('1', '1'), ('2', '2'),
-                                            ('3', '3'), ('4', '4'), ('5', '5'),
-                                            ('6', '6'), ('7', '7'), ('8', '8'),
-                                            ('9', '9'), ('1', '10'), ('unlimited', 'Unlimited')], required=False)
-    stocks = forms.ChoiceField(choices=[("all", "All"),
-                                        ("s&p500", "S&P500"),
-                                        ("nasdaq100", "Nasdaq100"),
-                                        ("s&p_q100", "S&P_Q100"),
-                                        ("custom", "Custom")], required=False)
+    numrepeats = forms.ChoiceField(choices=numrepeats_choice, required=False)
+    stocks = forms.ChoiceField(choices=stocks_choices, required=False)
     latest = forms.BooleanField(help_text="Begin with the most recent entry if checked", required=False)
     finncandles_allquotes = None
     finncandles_candles = None
@@ -23,7 +23,9 @@ class StartCandlesAllQuotes(forms.Form):
 class StartCandleCandles(forms.Form):
     # stocks, fn, store, delt=None, polltime=5)
     start = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}), input_formats=['%Y-%m-%d %H:%M'])
+    numrepeats = forms.ChoiceField(choices=numrepeats_choice, required=False)
     num_gainerslosers = forms.IntegerField(max_value=35, min_value=5)
+    stocks = forms.ChoiceField(choices=stocks_choices, required=False)
     # firstquote_date = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
 
 
@@ -67,7 +69,6 @@ def isVisualizeData(fn):
 
 def getVisualFiles():
     dirname = util.getCsvDirectory()
-    ret = []
     filenames = [(x, x) for x in os.listdir(dirname) if isVisualizeData(os.path.join(dirname, x))]
     return filenames
 
