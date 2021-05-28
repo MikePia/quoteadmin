@@ -28,30 +28,33 @@ def startAllQuotes(request):
         if util.isRunning(rfile):
             util.stopRunning(rfile)
             messages.success(request, "Stopping candle gathering for the allquotes table")
-
-        form = StartCandlesAllQuotes(request.POST)
-        if form.is_valid():
-            dadate = form.cleaned_data['dadate']
-            start = dadate.replace(tzinfo=None)
-            start = util.dt2unix_ny(pd.Timestamp(start))
-
-            numrepeats = form.cleaned_data['numrepeats']
-            numrepeats = 10000 if numrepeats == 'unlimited' else int(numrepeats)
-            stocks = form.cleaned_data['stocks']
-
-            latest = form.cleaned_data['latest']
-            messages.success(request, 'Candle form was processed')
-            startCandlesTask.delay(start, stocks, latest, numrepeats)
-            candlesrunning = True
-            # bop.startCandlesold(kwargs)
-            form.finncandles_allquotes = True
-
+            candlesrunning = False
+            form = StartCandlesAllQuotes()
         else:
-            # Form validation errors
-            for err in form.errors:
-                for msg in form.errors[err]:
-                    messages.error(request, msg)
-                print()
+
+            form = StartCandlesAllQuotes(request.POST)
+            if form.is_valid():
+                dadate = form.cleaned_data['dadate']
+                start = dadate.replace(tzinfo=None)
+                start = util.dt2unix_ny(pd.Timestamp(start))
+
+                numrepeats = form.cleaned_data['numrepeats']
+                numrepeats = 10000 if numrepeats == 'unlimited' else int(numrepeats)
+                stocks = form.cleaned_data['stocks']
+
+                latest = form.cleaned_data['latest']
+                messages.success(request, 'Candle form was processed')
+                startCandlesTask.delay(start, stocks, latest, numrepeats)
+                candlesrunning = True
+                # bop.startCandlesold(kwargs)
+                form.finncandles_allquotes = True
+
+            else:
+                # Form validation errors
+                for err in form.errors:
+                    for msg in form.errors[err]:
+                        messages.error(request, msg)
+                    print()
     else:
         # Uninit for for GET
         form = StartCandlesAllQuotes()
