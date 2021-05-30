@@ -106,7 +106,7 @@ def startCandleCandles(request):
                 messages.success(request, 'Candle form was processed')
 
                 # startCandleCandlesTask.delay(start, stocks, latest, numrepeats, num_gainerslosers)
-                startCandleCandlesTask(start, stocks, latest, numrepeats, num_gainerslosers)
+                startCandleCandlesTask.delay(start, stocks, latest, int(numrepeats), int(num_gainerslosers))
                 messages.success(request, 'Started gathering candles')
                 CANDLERUNNING = True
 
