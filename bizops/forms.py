@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import os
 from django import forms
@@ -9,6 +10,17 @@ numrepeats_choice = [('0', '0'), ('1', '1'), ('2', '2'),
                      ('9', '9'), ('1', '10'), ('unlimited', 'Unlimited')]
 stocks_choices = [("all", "All"), ("s&p500", "S&P500"), ("nasdaq100", "Nasdaq100"),
                   ("s&p_q100", "S&P_Q100"), ("custom", "Custom")]
+
+
+def twobizdays():
+    day = dt.datetime.now()
+    daysago = 2
+
+    if day.weekday() > 4:
+        daysago += day.weekday() - 4
+    day = day - dt.timedelta(days=daysago)
+    day = dt.datetime(day.year, day.month, day.day, 0, 0)
+    return day
 
 
 class StartCandlesAllQuotes(forms.Form):
@@ -27,6 +39,15 @@ class StartCandleCandlesForm(forms.Form):
     num_gainerslosers = forms.IntegerField(max_value=35, min_value=5)
     stocks = forms.ChoiceField(choices=stocks_choices, required=False)
     # firstquote_date = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh-mm"}), input_formats=['%Y-%m-%d %H:%M'])
+
+    def clean_start(self):
+        start_passed = self.cleaned_data.get("start")
+        start_passed = start_passed.replace(tzinfo=None)
+        leastdate = twobizdays()
+        print(leastdate, start_passed)
+        if start_passed < leastdate:
+            raise forms.ValidationError("Please choose a start date within the last 2 working days ")
+        return start_passed
 
 
 class StartWebsocket(forms.Form):
