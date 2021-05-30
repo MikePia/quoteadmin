@@ -95,16 +95,18 @@ def startCandleCandles(request):
 
             if form_candles.is_valid():
                 start = form_candles.cleaned_data['start']
-                start = start.replace(tzinfo=None)
+                # start = start.replace(tzinfo=None)
                 start = util.dt2unix_ny(pd.Timestamp(start))
                 stocks = form_candles.cleaned_data['stocks']
                 numrepeats = form_candles.cleaned_data['numrepeats']
+                numrepeats = 10000 if numrepeats == 'unlimited' else int(numrepeats)
 
                 num_gainerslosers = form_candles.cleaned_data['num_gainerslosers']
                 latest = False
                 messages.success(request, 'Candle form was processed')
 
-                startCandleCandlesTask.delay()(start, stocks, latest, numrepeats, num_gainerslosers)
+                # startCandleCandlesTask.delay(start, stocks, latest, numrepeats, num_gainerslosers)
+                startCandleCandlesTask(start, stocks, latest, numrepeats, num_gainerslosers)
                 messages.success(request, 'Started gathering candles')
                 CANDLERUNNING = True
 

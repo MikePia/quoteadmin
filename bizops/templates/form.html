@@ -120,11 +120,12 @@
                         </form>
                         <form action="candles" method="post">
                             {% csrf_token %}
-                            {% if thebebop %}
+                            {% if candlerunning %}
                              <button class="btn btn-primary" type="submit">Stop Candles</button> 
                             {% endif %}
                             
                         </form>
+
                     </div>
                 </div>
                 
