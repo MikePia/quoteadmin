@@ -50,7 +50,7 @@ def startAllQuotes(request):
 
                 latest = form.cleaned_data['latest']
                 messages.success(request, 'Candle form was processed')
-                startCandlesTask.delay(start, stocks, latest, int(numrepeats))
+                startCandlesTask.delay(start, stocks, latest, int(numrepeats), QUOTEPID)
                 QUOTERUNNING = True
                 # bop.startCandlesold(kwargs)
                 form.finncandles_allquotes = True
@@ -106,7 +106,7 @@ def startCandleCandles(request):
                 messages.success(request, 'Candle form was processed')
 
                 # startCandleCandlesTask.delay(start, stocks, latest, numrepeats, num_gainerslosers)
-                startCandleCandlesTask.delay(start, stocks, latest, int(numrepeats), int(num_gainerslosers))
+                startCandleCandlesTask.delay(start, stocks, latest, int(numrepeats), int(num_gainerslosers), CANDLEPID)
                 messages.success(request, 'Started gathering candles')
                 CANDLERUNNING = True
 

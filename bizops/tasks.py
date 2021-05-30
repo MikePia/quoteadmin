@@ -23,16 +23,16 @@ def sleepy(duration):
 
 
 @shared_task
-def startCandles(start, stocks, latest, numcycles):
+def startCandles(start, stocks, latest, numcycles, rfile):
     fc = FinnCandles(getStocks(stocks))
-    fc.cycleStockCandles(start=start, model=AllquotesModel, latest=latest, numcycles=numcycles)
+    fc.cycleStockCandles(start=start, model=AllquotesModel, latest=latest, numcycles=numcycles, rfile=rfile)
     return None
 
 
 @shared_task
-def startCandleCandlesTask(start, stocks, latest, numcycles, numrecs):
+def startCandleCandlesTask(start, stocks, latest, numcycles, numrecs, rfile):
     stocks = getStocks(stocks)
     end = util.dt2unix(dt.datetime.utcnow())
     stocks = getJustGainersLosers(start, end, stocks, numrecs, AllquotesModel, local=False)
     fc = FinnCandles(stocks)
-    fc.cycleStockCandles(start=start, model=CandlesModel, latest=latest, numcycles=numcycles)
+    fc.cycleStockCandles(start=start, model=CandlesModel, latest=latest, numcycles=numcycles, rfile=rfile)
