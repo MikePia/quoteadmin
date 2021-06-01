@@ -134,24 +134,6 @@ class BusinessOps:
         dirnames = [(x, x) for x in dirnames if not x.startswith(".") and not x.startswith("_")]
         return dirnames
 
-    def runVizData(self, filename='', srate=1.0, fq=None, outfile='out.json'):
-        print("runVixData")
-        procd = ProcessData([], None, srate)
-        self.outname = procd.visualizeDataNew(filename, fq, outfile)
-        self.processingdata = False
-        return self.outname
-
-    def processData(self, *args, **kwargs):
-        self.processingdata = True
-        kwargs['srate'] = dt.timedelta(seconds=kwargs['srate'])
-        kwargs['filename'] = os.path.normpath(os.path.join(util.getCsvDirectory(), kwargs['filename']))
-        t = Thread(target=self.runVizData, kwargs=kwargs)
-        t.start()
-        t.join()
-        self.processingdata = False
-
-        return self.outname
-
     def openJsonFile(self, fn):
         """
         fn should be from a list of files verified to be visualize json files

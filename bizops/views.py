@@ -1,9 +1,6 @@
 import pandas as pd
-from quotedb.models.allquotes_candlemodel import AllquotesModel
-from quotedb.models.candlesmodel import CandlesModel
 from quotedb.utils import util
 
-from quotedb.finnhub.finncandles import FinnCandles
 
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -12,8 +9,8 @@ from .businessops import BusinessOps
 from .forms import (StartCandlesAllQuotes,  StartCandleCandlesForm,
                     StartWebsocket, ProcessVisualizeData,
                     VisualizeData)
-from .tasks import sleepy as sleepytask
-from .tasks import startCandles as startCandlesTask, startCandleCandlesTask
+from .tasks import (sleepy as sleepytask, startCandles as startCandlesTask,
+                    startCandleCandlesTask, startWebSocketTask, processDataTask)
 
 thebebop = None     # for startCandleCandles
 thebebopsocket = None    # For web socket, copied from thebebop
@@ -22,13 +19,27 @@ thebebopprocessing = None
 QUOTERUNNING = False
 CANDLERUNNING = False
 SOCKETRUNNING = False
+PROCVIZRUNNING = False
 QUOTEPID = "startcandles.pid"
 CANDLEPID = "startcandlecandles.pid"
 SOCKETPID = "socket.pid"
+PROCVIZPID = "processvisual.txt"
+
+
+def getRunningFiles():
+    global QUOTERUNNING
+    global CANDLERUNNING
+    global SOCKETRUNNING
+    global PROCVIZRUNNING
+    QUOTERUNNING = util.isRunning(QUOTEPID)
+    CANDLERUNNING = util.isRunning(CANDLEPID)
+    SOCKETRUNNING = util.isRunning(SOCKETPID)
+    PROCVIZRUNNING = util.isRunning(PROCVIZPID)
+
 
 def startAllQuotes(request):
     global QUOTERUNNING
-    QUOTERUNNING = util.isRunning(QUOTEPID)
+    getRunningFiles()
     if request.method == "POST":
 
         if QUOTERUNNING:
@@ -76,13 +87,14 @@ def startAllQuotes(request):
                                          'form_visualizedata': form_visualizedata,
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
-                                         'socketrunning': SOCKETRUNNING
+                                         'socketrunning': SOCKETRUNNING,
+                                         'procvizrunning': PROCVIZPID
                                          })
 
 
 def startCandleCandles(request):
     global CANDLERUNNING
-    CANDLERUNNING = util.isRunning(CANDLEPID)
+    getRunningFiles()
     if request.method == "POST":
         if CANDLERUNNING:
             util.stopRunning(CANDLEPID)
@@ -124,35 +136,35 @@ def startCandleCandles(request):
                                          'form_visualizedata': form_visualizedata,
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
-                                         'socketrunning': SOCKETRUNNING
+                                         'socketrunning': SOCKETRUNNING,
+                                         'procvizrunning': PROCVIZPID
                                          })
 
 
 def startWebsocket(request):
-    global thebebopsocket
+    global SOCKETRUNNING
+    getRunningFiles()
     if request.method == "POST":
-        if thebebopsocket and thebebopsocket.socketisrunning:
-            thebebopsocket.stopSocket()
+        if SOCKETRUNNING:
+            util.stopRunning(SOCKETPID)
             messages.success(request, "Stopping webs socket")
-            thebebopsocket = None
+            SOCKETRUNNING = False
+        else:
+            form_websocket = StartWebsocket(request.POST)
 
-        form_websocket = StartWebsocket(request.POST)
+            if form_websocket.is_valid():
+                start = form_websocket.cleaned_data['start']
+                start = start.replace(tzinfo=None)
+                start = util.dt2unix_ny(pd.Timestamp(start))
+                fn = form_websocket.cleaned_data['filename']
+                # sampleRate = form_websocket.cleaned_data['sampleRate']
+                numstocks = form_websocket.cleaned_data['numstocks']
 
-        if form_websocket.is_valid():
-            start = form_websocket.cleaned_data['start']
-            start = start.replace(tzinfo=None)
-            start = util.dt2unix_ny(pd.Timestamp(start))
-            fn = form_websocket.cleaned_data['filename']
-            # sampleRate = form_websocket.cleaned_data['sampleRate']
-            numstocks = form_websocket.cleaned_data['numstocks']
-
-            bop = thebebopsocket
-            if bop:
-                bop.startWebSocket(start, None, numstocks, fn)
-                messages.success(request, 'Web socket started')
-
+                startWebSocketTask(start, None, fn, numstocks, rfile=SOCKETPID)
+                SOCKETRUNNING = True
             else:
-                messages.error(request, "Missing the stocks. Please run startCandles")
+                messages.warning(request, "Failed to validate the socket form")
+
     else:
         form_websocket = StartWebsocket()
 
@@ -167,18 +179,17 @@ def startWebsocket(request):
                                          'form_visualizedata': form_visualizedata,
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
-                                         'socketrunning': SOCKETRUNNING
+                                         'socketrunning': SOCKETRUNNING,
+                                         'procvizrunning': PROCVIZPID
                                          })
 
 
 def processVisualizeData(request):
-    global thebebopprocessing
-    ofn = None
+    global PROCVIZRUNNING
+    getRunningFiles()
     if request.method == "POST":
-        if thebebopprocessing and thebebopprocessing.processingdata:
-            thebebopprocessing.stopProcess()
-            messages.success(request, "Stopping the data processing")
-            thebebopprocessing = None
+        if util.isRunning(PROCVIZPID):
+            messages.success(request, "??? ")
         form_processdata = ProcessVisualizeData(request.POST)
         if form_processdata.is_valid():
             filename = form_processdata.cleaned_data['filename']
@@ -186,10 +197,9 @@ def processVisualizeData(request):
             srate = float(form_processdata.cleaned_data['sampleRate'])
             fq = form_processdata.cleaned_data['fq'].replace(tzinfo=None)
             fq = util.dt2unix_ny(pd.Timestamp(fq))
-            if not thebebopprocessing:
-                thebebopprocessing = BusinessOps([])
-            thebebopprocessing.processingdata = False
-            ofn = thebebopprocessing.processData(filename=filename, srate=srate, fq=fq, outfile=outfile)
+            processDataTask(filename=filename, srate=srate, fq=fq, outfile=outfile)
+            PROCVIZRUNNING = True
+
     else:
         form_processdata = ProcessVisualizeData()
     form_quotes = StartCandlesAllQuotes()
@@ -201,10 +211,10 @@ def processVisualizeData(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket,
-                                         'thebebopprocessing': thebebopprocessing,
-                                         'outfilename': ofn
+                                         'quoterunning': QUOTERUNNING,
+                                         'candlerunning': CANDLERUNNING,
+                                         'socketrunning': SOCKETRUNNING,
+                                         'procvizrunning': PROCVIZPID
                                          })
 
 
@@ -235,9 +245,10 @@ def getVisualData(request):
                                          'form_websocket': form_websocket,
                                          'form_processdata': form_processdata,
                                          'form_visualizedata': form_visualizedata,
-                                         'thebebop': thebebop,
-                                         'thebebopsocket': thebebopsocket,
-                                         'thebebopprocessing': thebebopprocessing
+                                         'quoterunning': QUOTERUNNING,
+                                         'candlerunning': CANDLERUNNING,
+                                         'socketrunning': SOCKETRUNNING,
+                                         'procvizrunning': PROCVIZPID
                                          })
 
 
