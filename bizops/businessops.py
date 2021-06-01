@@ -134,9 +134,6 @@ class BusinessOps:
         dirnames = [(x, x) for x in dirnames if not x.startswith(".") and not x.startswith("_")]
         return dirnames
 
-    def stopProcessing(self):
-        pass
-
     def runVizData(self, filename='', srate=1.0, fq=None, outfile='out.json'):
         print("runVixData")
         procd = ProcessData([], None, srate)

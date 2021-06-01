@@ -94,14 +94,37 @@ def getVisualFiles():
     return filenames
 
 
+def isRawData(fn):
+    """Determine if fn is raw data created from the websocket"""
+    if not os.path.isfile(fn):
+        return False
+    with open(fn, 'r') as f:
+        line1 = f.readline()
+        try:
+            line1 = json.loads(line1)
+            if {'price', 'stock', 'timestamp', 'volume'}.issubset(set(line1.keys())):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def getRawFiles():
+    """Get the files inside the data directory that are raw data files created by the websocket"""
+    dirname = util.getCsvDirectory()
+    filenames = [(x, x) for x in os.listdir(dirname) if isRawData(os.path.join(dirname, x))]
+    return filenames
+
+
 class ProcessVisualizeData(forms.Form):
+    """A form to retrieve and process raw data files created by the web socket into visualize data."""
     def __init__(self, *args, **kwargs):
         super(ProcessVisualizeData, self).__init__(*args, **kwargs)
-        self.fields['filename'] = forms.ChoiceField(choices=getFileNames())
+        self.fields['filename'] = forms.ChoiceField(choices=getRawFiles(), label="Raw data files")
 
-    filename = forms.ChoiceField(choices=getFileNames())
+    filename = forms.ChoiceField(choices=getFileNames(), label="Raw data files")
     outfile = forms.CharField(label="outfile",)
-    sampleRate = forms.DecimalField(max_value=3600, min_value=0.2, decimal_places=3)
+    sampleRate = forms.DecimalField(max_value=3600, min_value=0.199, decimal_places=3)
     fq = forms.DateTimeField(widget=forms.DateTimeInput({"placeholder": "yyyy-mm-dd hh:mm"}),
                              input_formats=['%Y-%m-%d %H:%M'],
                              label="FirstQuote date",
@@ -120,12 +143,12 @@ class VisualizeData(forms.Form):
         super(VisualizeData, self).__init__(*args, **kwargs)
         files = getVisualFiles()
         if files:
-            self.fields['filename'] = forms.ChoiceField(choices=files)
+            self.fields['filename'] = forms.ChoiceField(choices=files, label="Visualize datafiles")
 
-    filename = forms.ChoiceField()
+    filename = forms.ChoiceField(label="Visualize datafiles.")
     viewchoice = forms.CharField(label='What do you want to do?', widget=forms.RadioSelect(choices=VISUALFILE_CHOICES))
 
 
 if __name__ == '__main__':
-    print(getVisualFiles())
+    print(getRawFiles())
     print()
