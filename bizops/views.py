@@ -88,7 +88,7 @@ def startAllQuotes(request):
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
                                          'socketrunning': SOCKETRUNNING,
-                                         'procvizrunning': PROCVIZPID
+                                         'procvizrunning': PROCVIZRUNNING
                                          })
 
 
@@ -137,7 +137,7 @@ def startCandleCandles(request):
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
                                          'socketrunning': SOCKETRUNNING,
-                                         'procvizrunning': PROCVIZPID
+                                         'procvizrunning': PROCVIZRUNNING
                                          })
 
 
@@ -180,7 +180,7 @@ def startWebsocket(request):
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
                                          'socketrunning': SOCKETRUNNING,
-                                         'procvizrunning': PROCVIZPID
+                                         'procvizrunning': PROCVIZRUNNING
                                          })
 
 
@@ -214,7 +214,7 @@ def processVisualizeData(request):
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
                                          'socketrunning': SOCKETRUNNING,
-                                         'procvizrunning': PROCVIZPID
+                                         'procvizrunning': PROCVIZRUNNING
                                          })
 
 
@@ -248,7 +248,7 @@ def getVisualData(request):
                                          'quoterunning': QUOTERUNNING,
                                          'candlerunning': CANDLERUNNING,
                                          'socketrunning': SOCKETRUNNING,
-                                         'procvizrunning': PROCVIZPID
+                                         'procvizrunning': PROCVIZRUNNING
                                          })
 
 
