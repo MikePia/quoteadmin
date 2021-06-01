@@ -197,7 +197,7 @@ def processVisualizeData(request):
             srate = float(form_processdata.cleaned_data['sampleRate'])
             fq = form_processdata.cleaned_data['fq'].replace(tzinfo=None)
             fq = util.dt2unix_ny(pd.Timestamp(fq))
-            processDataTask(filename=filename, srate=srate, fq=fq, outfile=outfile)
+            processDataTask.delay(filename=filename, srate=srate, fq=fq, outfile=outfile)
             PROCVIZRUNNING = True
 
     else:
