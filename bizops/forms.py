@@ -1,8 +1,10 @@
 import datetime as dt
-import json
 import os
 from django import forms
+from quotedb.finnhub.finntrade_ws import ProcessData
 from quotedb.utils import util
+from .businessops import BusinessOps
+
 
 numrepeats_choice = [('0', '0'), ('1', '1'), ('2', '2'),
                      ('3', '3'), ('4', '4'), ('5', '5'),
@@ -67,60 +69,12 @@ def getFileNames():
     return dirnames
 
 
-def isVisualizeData(fn):
-    if not os.path.isfile(fn):
-        return False
-    with open(fn, 'r') as f:
-        line = f.readline()
-    try:
-        j = json.loads(line)
-    except Exception:
-        return False
-    if not j or (
-            not isinstance(j, list)) or (
-            not isinstance(j[0], dict)) or (
-            not j[0].values()) or (
-            not list(j[0].values())[0]) or (
-            not isinstance(list(j[0].values())[0], list)) or (
-            not isinstance(list(j[0].values())[0][0], dict)) or (
-            not set(list(j[0].values())[0][0].keys()).issubset({'volume', 'delta_t', 'delta_v', 'delta_p', 'price', 'stock'})):
-        return False
-    return True
-
-
-def getVisualFiles():
-    dirname = util.getCsvDirectory()
-    filenames = [(x, x) for x in os.listdir(dirname) if isVisualizeData(os.path.join(dirname, x))]
-    return filenames
-
-
-def isRawData(fn):
-    """Determine if fn is raw data created from the websocket"""
-    if not os.path.isfile(fn):
-        return False
-    with open(fn, 'r') as f:
-        line1 = f.readline()
-        try:
-            line1 = json.loads(line1)
-            if {'price', 'stock', 'timestamp', 'volume'}.issubset(set(line1.keys())):
-                return True
-        except Exception:
-            pass
-    return False
-
-
-def getRawFiles():
-    """Get the files inside the data directory that are raw data files created by the websocket"""
-    dirname = util.getCsvDirectory()
-    filenames = [(x, x) for x in os.listdir(dirname) if isRawData(os.path.join(dirname, x))]
-    return filenames
-
-
 class ProcessVisualizeData(forms.Form):
     """A form to retrieve and process raw data files created by the web socket into visualize data."""
     def __init__(self, *args, **kwargs):
         super(ProcessVisualizeData, self).__init__(*args, **kwargs)
-        self.fields['filename'] = forms.ChoiceField(choices=getRawFiles(), label="Raw data files")
+        bop = BusinessOps([])
+        self.fields['filename'] = forms.ChoiceField(choices=bop.getRawFiles(), label="Raw data files")
 
     filename = forms.ChoiceField(choices=getFileNames(), label="Raw data files")
     outfile = forms.CharField(label="outfile",)
@@ -129,6 +83,21 @@ class ProcessVisualizeData(forms.Form):
                              input_formats=['%Y-%m-%d %H:%M'],
                              label="FirstQuote date",
                              help_text="Enter the datetime for delta comparisons")
+
+    def clean_fq(self):
+        """If the time is bad for the file, change it to an acceptible time.
+        If the time is in reasonable boundaries, assume it was on purpose.
+        """
+        fq_passed = self.cleaned_data.get("fq")
+        fq_passed = fq_passed.replace(tzinfo=None)
+        filename_passed = self.cleaned_data.get("filename")
+        procd = ProcessData([])
+        fn = os.path.join(util.getCsvDirectory(), filename_passed)
+        df = procd.readRawData(fn)
+        df = procd.setIndextoTimestamp(df)
+        if fq_passed < df.index[0] - dt.timedelta(hours=24) or fq_passed >= df.index[-1]:
+            fq_passed = df.index[0] - dt.timedelta(minutes=30)
+        return fq_passed
 
 
 VISUALFILE_CHOICES = [
@@ -141,7 +110,8 @@ class VisualizeData(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(VisualizeData, self).__init__(*args, **kwargs)
-        files = getVisualFiles()
+        bop = BusinessOps([])
+        files = bop.getVisualFiles()
         if files:
             self.fields['filename'] = forms.ChoiceField(choices=files, label="Visualize datafiles")
 
@@ -150,5 +120,4 @@ class VisualizeData(forms.Form):
 
 
 if __name__ == '__main__':
-    print(getRawFiles())
     print()
