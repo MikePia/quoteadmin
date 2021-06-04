@@ -30,6 +30,7 @@ def sleepy(duration):
 def startCandles(start, stocks, latest, numcycles, rfile):
     fc = FinnCandles(getStocks(stocks))
     fc.cycleStockCandles(start=start, model=AllquotesModel, latest=latest, numcycles=numcycles, rfile=rfile)
+    util.stopRunning(rfile)
     return None
 
 
@@ -40,6 +41,7 @@ def startCandleCandlesTask(start, stocks, latest, numcycles, numrecs, rfile):
     stocks = getJustGainersLosers(start, end, stocks, numrecs, AllquotesModel, local=False)
     fc = FinnCandles(stocks)
     fc.cycleStockCandles(start=start, model=CandlesModel, latest=latest, numcycles=numcycles, rfile=rfile)
+    util.stopRunning(rfile)
 
 
 @shared_task
@@ -66,6 +68,7 @@ def startWebSocketTask(start, srate, fn, numrec, rfile='socket.pid'):
             print(' ** ')
             time.sleep(polltime)
     ws_thread.ws.close()
+    util.stopRunning(rfile)
 
 
 @shared_task
